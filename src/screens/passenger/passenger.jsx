@@ -9,6 +9,7 @@ import {
     requestForegroundPermissionsAsync,
     reverseGeocodeAsync
 } from "expo-location";
+import { api, HandleError } from "../../constants/api.js";
 
 
 function Passenger(props) {
@@ -23,46 +24,26 @@ function Passenger(props) {
     const [driverName, setDriverName] = useState("");
 
     async function RequestRideFromUser() {
-        // Acessa dados na API... 
 
-        //const response = {};
+        try {
 
-        /*
-                const response = {
-                    ride_id: 1,
-                    passenger_user_id: 1,
-                    passenger_name: "Heber Stein Mazutti",
-                    passenger_phone: "(11) 99999-9999",
-                    pickup_address: "Praça Charles Miller - Pacaembu",
-                    pickup_date: "2025-02-19",
-                    pickup_latitude: "-23.543132",
-                    pickup_longitude: "-46.665389",
-                    dropoff_address: "Shopping Center Norte",
-                    status: "P",
-                    driver_user_id: null,
-                    driver_name: null,
-                    driver_phone: null
+            const response = await api.get("/rides", {
+                params: {
+                    passenger_user_id: userId,
+                    pickup_date: new Date().toISOString("pt-BR", { timeZone: "America/Sao_Paulo" }).substring(0, 10),
+                    status_not: "F"
                 }
-        */
+            });
 
-        const response = {
-            ride_id: 1,
-            passenger_user_id: 1,
-            passenger_name: "Heber Stein Mazutti",
-            passenger_phone: "(11) 99999-9999",
-            pickup_address: "Praça Charles Miller - Pacaembu",
-            pickup_date: "2025-02-19",
-            pickup_latitude: "-23.543132",
-            pickup_longitude: "-46.665389",
-            dropoff_address: "Shopping Center Norte",
-            status: "A",
-            driver_user_id: 2,
-            driver_name: "João Martins",
-            driver_phone: "(11) 5555-5555"
+            if (response.data[0])
+                return response.data[0];
+            else
+                return {};
+
+        } catch (error) {
+            HandleError(error);
+            props.navigation.goBack();
         }
-
-
-        return response;
     }
 
     async function RequestPermissionAndGetLocation() {
@@ -126,40 +107,55 @@ function Passenger(props) {
     }
 
     async function AskForRide() {
-        const json = {
-            passenger_id: userId,
-            pickup_address: pickupAddress,
-            dropoff_address: dropoffAddress,
-            pickup_latitude: myLocation.latitude,
-            pickup_longitude: myLocation.longitude
+        try {
+
+            const json = {
+                passenger_user_id: userId,
+                pickup_address: pickupAddress,
+                dropoff_address: dropoffAddress,
+                pickup_latitude: myLocation.latitude,
+                pickup_longitude: myLocation.longitude
+            }
+
+            const response = await api.post("/rides", json);
+
+            if (response.data)
+                props.navigation.goBack();
+
+        } catch (error) {
+            HandleError(error);
         }
 
-        console.log("Fazer POSt para o servidor: ", json);
-
-        props.navigation.goBack();
     }
 
 
     async function CancelRide() {
-        const json = {
-            passenger_user_id: userId,
-            ride_id: rideId
-        };
 
-        console.log("Cancelar carona", json);
+        try {
+            const response = await api.delete("/rides/" + rideId);
 
-        props.navigation.goBack();
+            if (response.data)
+                props.navigation.goBack();
+
+        } catch (error) {
+            HandleError(error);
+        }
     }
 
     async function FinishRide() {
         const json = {
             passenger_user_id: userId,
-            ride_id: rideId
         };
 
-        console.log("Finalizar carona", json);
+        try {
+            const response = await api.put("/rides/" + rideId + "/finish", json);
 
-        props.navigation.goBack();
+            if (response.data)
+                props.navigation.goBack();
+
+        } catch (error) {
+            HandleError(error);
+        }
     }
 
     useEffect(() => {

@@ -4,6 +4,7 @@ import MapView, { Marker, PROVIDER_DEFAULT } from "react-native-maps";
 import { styles } from "./ride-detail.style.js";
 import { useEffect, useState } from "react";
 import icons from "../../constants/icons.js";
+import { api, HandleError } from "../../constants/api.js";
 
 
 function RideDetail(props) {
@@ -15,69 +16,51 @@ function RideDetail(props) {
 
     async function RequestRideDetail() {
 
-        // Acessa dados na API... 
+        try {
+            const response = await api.get("/rides/" + rideId);
 
-        /*
-        const response = {
-            ride_id: 1,
-            passenger_user_id: 1,
-            passenger_name: "Heber Stein Mazutti",
-            passenger_phone: "(11) 99999-9999",
-            pickup_address: "Praça Charles Miller - Pacaembu",
-            pickup_date: "2025-02-19",
-            pickup_latitude: "-23.543132",
-            pickup_longitude: "-46.665389",
-            dropoff_address: "Shopping Center Norte",
-            status: "P",
-            driver_user_id: null,
-            driver_name: null,
-            driver_phone: null
+            if (response.data) {
+                setRide(response.data);
+                setTitle(response.data.passenger_name + " - " + response.data.passenger_phone);
+            }
+        } catch (error) {
+            HandleError(error);
+            props.navigation.goBack();
         }
-        */
-
-        const response = {
-            ride_id: 1,
-            passenger_user_id: 1,
-            passenger_name: "Heber Stein Mazutti",
-            passenger_phone: "(11) 99999-9999",
-            pickup_address: "Praça Charles Miller - Pacaembu",
-            pickup_date: "2025-02-19",
-            pickup_latitude: "-23.543132",
-            pickup_longitude: "-46.665389",
-            dropoff_address: "Shopping Center Norte",
-            status: "A",
-            driver_user_id: 2,
-            driver_name: "João Martins",
-            driver_phone: "(11) 5555-5555"
-        }
-
-        if (response.passenger_name) {
-            setTitle(response.passenger_name + " - " + response.passenger_phone);
-            setRide(response);
-        }
-
     }
 
     async function AcceptRide() {
         const json = {
             driver_user_id: userId,
-            ride_id: rideId
         }
 
-        console.log("Aceitar", json);
+        try {
+            const response = await api.put("rides/" + rideId + "/accept", json);
 
-        props.navigation.goBack();
+            if (response.data)
+                props.navigation.goBack();
+
+        } catch (error) {
+            HandleError(error);
+            props.navigation.goBack();
+        }
     }
 
     async function CancelRide() {
         const json = {
             driver_user_id: userId,
-            ride_id: rideId
         }
 
-        console.log("Cancelar", json);
+        try {
+            const response = await api.put("rides/" + rideId + "/cancel", json);
 
-        props.navigation.goBack();
+            if (response.data)
+                props.navigation.goBack();
+
+        } catch (error) {
+            HandleError(error);
+            props.navigation.goBack();
+        }
     }
 
     useEffect(() => {
